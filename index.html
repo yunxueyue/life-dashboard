@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>人生控制中心</title>
+<title>人生控制中心 V4</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -24,95 +24,62 @@ margin-top:10px;
 }
 
 .card{
-
 background:white;
-
 margin:12px 0;
-
 padding:15px;
-
 border-radius:15px;
-
 box-shadow:0 5px 15px rgba(0,0,0,0.08);
-
 }
 
 .task{
-
 display:flex;
-
 justify-content:space-between;
-
 margin:10px 0;
-
 }
 
 .done{
-
 text-decoration:line-through;
-
 color:gray;
-
 }
 
 .progress{
-
 height:15px;
-
 background:#ddd;
-
 border-radius:10px;
-
 overflow:hidden;
-
 }
 
 .bar{
-
 height:100%;
-
 width:0%;
-
 background:#4CAF50;
-
 }
 
 input,textarea{
-
 width:90%;
-
 padding:8px;
-
 margin:8px;
-
 border-radius:8px;
-
 border:1px solid #ccc;
-
 }
 
 button{
-
 padding:10px 18px;
-
 border:none;
-
 border-radius:10px;
-
 background:#4CAF50;
-
 color:white;
-
+margin:5px;
 }
 
 img{
-
 max-width:100%;
-
 border-radius:10px;
-
 margin-top:10px;
+}
 
+.photoBox{
+margin-top:10px;
 }
 
 </style>
@@ -132,12 +99,12 @@ margin-top:10px;
 <div id="tasks"></div>
 
 <div class="progress">
-
 <div class="bar" id="bar"></div>
-
 </div>
 
 <div id="status"></div>
+
+<button onclick="nextDay()">结束今天</button>
 
 </div>
 
@@ -160,13 +127,11 @@ margin-top:10px;
 
 <h3>统计</h3>
 
-🔥 连续完成  
+🔥 连续完成天数  
 <div id="streak">0</div>
 
 <canvas id="studyChart"></canvas>
-
 <canvas id="runChart"></canvas>
-
 <canvas id="funChart"></canvas>
 
 </div>
@@ -181,7 +146,7 @@ margin-top:10px;
 
 <div id="photo"></div>
 
-<button onclick="saveDiary()">保存</button>
+<button onclick="saveDiary()">保存日记</button>
 
 </div>
 
@@ -200,33 +165,33 @@ margin-top:10px;
 <h3>人生倒计时</h3>
 
 毕业倒计时  
-
 <div id="grad"></div>
 
 研支团出发  
-
 <div id="service"></div>
+
+</div>
+
+<div class="card">
+
+<h3>数据备份</h3>
+
+<button onclick="exportData()">导出数据</button>
+
+<input type="file" id="importFile">
 
 </div>
 
 <script>
 
 const plans={
-
 "周一":["值班","英语","日语","散步"],
-
 "周二":["值班","毕设","跑步","英语"],
-
 "周三":["图书馆毕设","英语","日语","跑步"],
-
 "周四":["毕设","英语","口琴","跑步"],
-
 "周五":["值班","例会","娱乐","散步"],
-
 "周六":["学习","跑步","摄影","探索北京"],
-
 "周日":["组会","毕设","跑步","娱乐"]
-
 }
 
 const days=["周日","周一","周二","周三","周四","周五","周六"]
@@ -242,41 +207,29 @@ const taskBox=document.getElementById("tasks")
 tasks.forEach((t,i)=>{
 
 let div=document.createElement("div")
-
 div.className="task"
 
 let span=document.createElement("span")
-
 span.innerText=t
 
 let box=document.createElement("input")
-
 box.type="checkbox"
 
 let saved=localStorage.getItem(today+i)
 
 if(saved==="true"){
-
 box.checked=true
-
 span.classList.add("done")
-
 }
 
 box.onchange=()=>{
-
 localStorage.setItem(today+i,box.checked)
-
 span.classList.toggle("done")
-
 update()
-
 }
 
 div.appendChild(span)
-
 div.appendChild(box)
-
 taskBox.appendChild(div)
 
 })
@@ -284,38 +237,81 @@ taskBox.appendChild(div)
 function update(){
 
 let boxes=document.querySelectorAll("input[type=checkbox]")
-
 let done=0
 
-boxes.forEach(b=>{if(b.checked) done++})
+boxes.forEach(b=>{
+if(b.checked) done++
+})
 
 let percent=done/boxes.length*100
 
 document.getElementById("bar").style.width=percent+"%"
 
 document.getElementById("status").innerText=
-
 done>=3?"🎉 今日成功":"完成 "+done+"/4"
 
 }
 
 update()
 
-function saveDiary(){
+let streak=localStorage.getItem("streak")||0
+document.getElementById("streak").innerText=streak
 
-localStorage.setItem("diary",document.getElementById("diary").value)
+function nextDay(){
 
-alert("保存成功")
+let boxes=document.querySelectorAll("input[type=checkbox]")
+let done=0
+
+boxes.forEach(b=>{
+if(b.checked) done++
+})
+
+let streak=Number(localStorage.getItem("streak")||0)
+
+if(done>=3){
+streak++
+localStorage.setItem("streak",streak)
+}
+
+boxes.forEach((b,i)=>{
+localStorage.removeItem(today+i)
+})
+
+location.reload()
 
 }
 
 document.getElementById("diary").value=
-
 localStorage.getItem("diary")||""
 
-const upload=document.getElementById("imgUpload")
+function saveDiary(){
+localStorage.setItem("diary",
+document.getElementById("diary").value)
+}
 
-upload.onchange=function(){
+let photos=JSON.parse(localStorage.getItem("photos")||"[]")
+
+function renderPhotos(){
+
+let box=document.getElementById("photo")
+box.innerHTML=""
+
+photos.forEach((p,i)=>{
+
+let div=document.createElement("div")
+
+div.innerHTML=
+"<img src='"+p+"'><br><button onclick='deletePhoto("+i+")'>删除</button>"
+
+box.appendChild(div)
+
+})
+
+}
+
+renderPhotos()
+
+document.getElementById("imgUpload").onchange=function(){
 
 let file=this.files[0]
 
@@ -323,11 +319,11 @@ let reader=new FileReader()
 
 reader.onload=e=>{
 
-localStorage.setItem("photo",e.target.result)
+photos.push(e.target.result)
 
-document.getElementById("photo").innerHTML=
+localStorage.setItem("photos",JSON.stringify(photos))
 
-"<img src='"+e.target.result+"'>"
+renderPhotos()
 
 }
 
@@ -335,26 +331,24 @@ reader.readAsDataURL(file)
 
 }
 
-let savedPhoto=localStorage.getItem("photo")
+function deletePhoto(i){
 
-if(savedPhoto){
+photos.splice(i,1)
 
-document.getElementById("photo").innerHTML=
+localStorage.setItem("photos",JSON.stringify(photos))
 
-"<img src='"+savedPhoto+"'>"
+renderPhotos()
 
 }
 
 function saveTravel(){
 
 localStorage.setItem("travel",
-
 document.getElementById("travel").value)
 
 }
 
 document.getElementById("travel").value=
-
 localStorage.getItem("travel")||""
 
 function countdown(){
@@ -366,16 +360,52 @@ let service=new Date("2026-08-01")
 let now=new Date()
 
 document.getElementById("grad").innerText=
-
 Math.floor((grad-now)/86400000)+" 天"
 
 document.getElementById("service").innerText=
-
 Math.floor((service-now)/86400000)+" 天"
 
 }
 
 countdown()
+
+function exportData(){
+
+let data=JSON.stringify(localStorage)
+
+let blob=new Blob([data])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="life_backup.json"
+
+a.click()
+
+}
+
+document.getElementById("importFile").onchange=function(){
+
+let file=this.files[0]
+
+let reader=new FileReader()
+
+reader.onload=e=>{
+
+let data=JSON.parse(e.target.result)
+
+for(let k in data){
+localStorage.setItem(k,data[k])
+}
+
+location.reload()
+
+}
+
+reader.readAsText(file)
+
+}
 
 </script>
 
