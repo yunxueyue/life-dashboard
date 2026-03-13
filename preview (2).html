@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>人生控制中心</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:-apple-system,BlinkMacSystemFont;
+background:#eef2f7;
+margin:0;
+padding:15px;
+text-align:center;
+}
+
+h1{
+margin-top:10px;
+}
+
+.card{
+
+background:white;
+
+margin:12px 0;
+
+padding:15px;
+
+border-radius:15px;
+
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+
+}
+
+.task{
+
+display:flex;
+
+justify-content:space-between;
+
+margin:10px 0;
+
+}
+
+.done{
+
+text-decoration:line-through;
+
+color:gray;
+
+}
+
+.progress{
+
+height:15px;
+
+background:#ddd;
+
+border-radius:10px;
+
+overflow:hidden;
+
+}
+
+.bar{
+
+height:100%;
+
+width:0%;
+
+background:#4CAF50;
+
+}
+
+input,textarea{
+
+width:90%;
+
+padding:8px;
+
+margin:8px;
+
+border-radius:8px;
+
+border:1px solid #ccc;
+
+}
+
+button{
+
+padding:10px 18px;
+
+border:none;
+
+border-radius:10px;
+
+background:#4CAF50;
+
+color:white;
+
+}
+
+img{
+
+max-width:100%;
+
+border-radius:10px;
+
+margin-top:10px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>人生控制中心</h1>
+
+<div id="weekday"></div>
+
+<div class="card">
+
+<h3>今日任务</h3>
+
+<div id="tasks"></div>
+
+<div class="progress">
+
+<div class="bar" id="bar"></div>
+
+</div>
+
+<div id="status"></div>
+
+</div>
+
+<div class="card">
+
+<h3>今日记录</h3>
+
+跑步公里  
+<input id="run" type="number" step="0.1">
+
+毕设学习时间  
+<input id="study" type="number">
+
+娱乐时间  
+<input id="fun" type="number">
+
+</div>
+
+<div class="card">
+
+<h3>统计</h3>
+
+🔥 连续完成  
+<div id="streak">0</div>
+
+<canvas id="studyChart"></canvas>
+
+<canvas id="runChart"></canvas>
+
+<canvas id="funChart"></canvas>
+
+</div>
+
+<div class="card">
+
+<h3>今日总结</h3>
+
+<textarea id="diary" rows="4"></textarea>
+
+<input type="file" id="imgUpload">
+
+<div id="photo"></div>
+
+<button onclick="saveDiary()">保存</button>
+
+</div>
+
+<div class="card">
+
+<h3>北京探索记录</h3>
+
+<textarea id="travel"></textarea>
+
+<button onclick="saveTravel()">保存</button>
+
+</div>
+
+<div class="card">
+
+<h3>人生倒计时</h3>
+
+毕业倒计时  
+
+<div id="grad"></div>
+
+研支团出发  
+
+<div id="service"></div>
+
+</div>
+
+<script>
+
+const plans={
+
+"周一":["值班","英语","日语","散步"],
+
+"周二":["值班","毕设","跑步","英语"],
+
+"周三":["图书馆毕设","英语","日语","跑步"],
+
+"周四":["毕设","英语","口琴","跑步"],
+
+"周五":["值班","例会","娱乐","散步"],
+
+"周六":["学习","跑步","摄影","探索北京"],
+
+"周日":["组会","毕设","跑步","娱乐"]
+
+}
+
+const days=["周日","周一","周二","周三","周四","周五","周六"]
+
+const today=days[new Date().getDay()]
+
+document.getElementById("weekday").innerText="今天："+today
+
+const tasks=plans[today]
+
+const taskBox=document.getElementById("tasks")
+
+tasks.forEach((t,i)=>{
+
+let div=document.createElement("div")
+
+div.className="task"
+
+let span=document.createElement("span")
+
+span.innerText=t
+
+let box=document.createElement("input")
+
+box.type="checkbox"
+
+let saved=localStorage.getItem(today+i)
+
+if(saved==="true"){
+
+box.checked=true
+
+span.classList.add("done")
+
+}
+
+box.onchange=()=>{
+
+localStorage.setItem(today+i,box.checked)
+
+span.classList.toggle("done")
+
+update()
+
+}
+
+div.appendChild(span)
+
+div.appendChild(box)
+
+taskBox.appendChild(div)
+
+})
+
+function update(){
+
+let boxes=document.querySelectorAll("input[type=checkbox]")
+
+let done=0
+
+boxes.forEach(b=>{if(b.checked) done++})
+
+let percent=done/boxes.length*100
+
+document.getElementById("bar").style.width=percent+"%"
+
+document.getElementById("status").innerText=
+
+done>=3?"🎉 今日成功":"完成 "+done+"/4"
+
+}
+
+update()
+
+function saveDiary(){
+
+localStorage.setItem("diary",document.getElementById("diary").value)
+
+alert("保存成功")
+
+}
+
+document.getElementById("diary").value=
+
+localStorage.getItem("diary")||""
+
+const upload=document.getElementById("imgUpload")
+
+upload.onchange=function(){
+
+let file=this.files[0]
+
+let reader=new FileReader()
+
+reader.onload=e=>{
+
+localStorage.setItem("photo",e.target.result)
+
+document.getElementById("photo").innerHTML=
+
+"<img src='"+e.target.result+"'>"
+
+}
+
+reader.readAsDataURL(file)
+
+}
+
+let savedPhoto=localStorage.getItem("photo")
+
+if(savedPhoto){
+
+document.getElementById("photo").innerHTML=
+
+"<img src='"+savedPhoto+"'>"
+
+}
+
+function saveTravel(){
+
+localStorage.setItem("travel",
+
+document.getElementById("travel").value)
+
+}
+
+document.getElementById("travel").value=
+
+localStorage.getItem("travel")||""
+
+function countdown(){
+
+let grad=new Date("2026-06-30")
+
+let service=new Date("2026-08-01")
+
+let now=new Date()
+
+document.getElementById("grad").innerText=
+
+Math.floor((grad-now)/86400000)+" 天"
+
+document.getElementById("service").innerText=
+
+Math.floor((service-now)/86400000)+" 天"
+
+}
+
+countdown()
+
+</script>
+
+</body>
+
+</html>
